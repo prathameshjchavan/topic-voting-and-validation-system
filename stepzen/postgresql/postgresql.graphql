@@ -1,0 +1,390 @@
+type Comment {
+  username: String
+  text: String!
+  post_id: ID!
+  post: Post @materializer(query: "getPostUsingComment_post_id_fkey")
+  id: ID!
+  created_at: DateTime
+}
+
+type Post {
+  votes: [Vote] @materializer(query: "getVoteUsingVote_post_id_fkey")
+  username: String!
+  topic_id: ID!
+  topic: Topic @materializer(query: "getTopicUsingPost_topic_id_fkey")
+  title: String!
+  image: String
+  id: ID!
+  created_at: DateTime
+  comments: [Comment]
+    @materializer(query: "getCommentUsingComment_post_id_fkey")
+  body: String
+}
+
+type Topic {
+  topic: String!
+  posts: [Post] @materializer(query: "getPostUsingPost_topic_id_fkey")
+  id: ID!
+  created_at: DateTime
+}
+
+type Vote {
+  username: String
+  upvote: Boolean
+  post_id: ID
+  post: Post @materializer(query: "getPostUsingVote_post_id_fkey")
+  id: ID!
+  created_at: DateTime
+}
+
+"""
+The following queries are just a set of examples of how to access your schema.
+Feel free to modify them or aggregate more.
+"""
+type Query {
+  " Queries for type 'Comment' "
+  getComment(id: ID!): Comment
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Comment"
+      configuration: "postgresql_config"
+    )
+  getCommentList: [Comment]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Comment"
+      configuration: "postgresql_config"
+    )
+  getCommentPaginatedList(first: Int, after: Int): [Comment]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      SELECT "created_at", "id", "post_id", "text", "username" FROM "Comment" ORDER BY "id" LIMIT $1 OFFSET $2
+      """
+      configuration: "postgresql_config"
+    )
+  getCommentUsingComment_post_id_fkey(id: ID!): [Comment]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      SELECT "created_at", "id", "post_id", "text", "username" FROM "Comment" WHERE "post_id" = $1
+      """
+      configuration: "postgresql_config"
+    )
+  " Queries for type 'Post' "
+  getPost(id: ID!): Post
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Post"
+      configuration: "postgresql_config"
+    )
+  getPostList: [Post]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Post"
+      configuration: "postgresql_config"
+    )
+  getPostListByTopic(topic: String!): [Post]
+    @dbquery(
+      type: "postgresql"
+      query: """
+      select *, "Post".id as id from "Post"
+      join "Topic" on "Topic"."id" = "Post"."topic_id"
+      where "Topic"."topic" = $1
+      order by "Post"."created_at" desc
+      """
+      configuration: "postgresql_config"
+    )
+  getPostPaginatedList(first: Int, after: Int): [Post]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      SELECT "body", "created_at", "id", "image", "title", "topic_id", "username" FROM "Post" ORDER BY "id" LIMIT $1 OFFSET $2
+      """
+      configuration: "postgresql_config"
+    )
+  getPostUsingComment_post_id_fkey(post_id: ID!): Post
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      SELECT "body", "created_at", "id", "image", "title", "topic_id", "username" FROM "Post" WHERE "id" = $1
+      """
+      configuration: "postgresql_config"
+    )
+  getPostUsingPost_topic_id_fkey(id: ID!): [Post]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      SELECT "body", "created_at", "id", "image", "title", "topic_id", "username" FROM "Post" WHERE "topic_id" = $1
+      """
+      configuration: "postgresql_config"
+    )
+  getPostUsingVote_post_id_fkey(post_id: ID!): Post
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      SELECT "body", "created_at", "id", "image", "title", "topic_id", "username" FROM "Post" WHERE "id" = $1
+      """
+      configuration: "postgresql_config"
+    )
+  " Queries for type 'Topic' "
+  getTopic(id: ID!): Topic
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Topic"
+      configuration: "postgresql_config"
+    )
+  getTopicList: [Topic]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Topic"
+      configuration: "postgresql_config"
+    )
+  getTopicListByName(name: String!): [Topic]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      select * from "public"."Topic" where "topic" = $1
+      """
+      configuration: "postgresql_config"
+    )
+  getTopicPaginatedList(first: Int, after: Int): [Topic]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      SELECT "created_at", "id", "topic" FROM "Topic" ORDER BY "id" LIMIT $1 OFFSET $2
+      """
+      configuration: "postgresql_config"
+    )
+  getTopicUsingPost_topic_id_fkey(topic_id: ID!): Topic
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      SELECT "created_at", "id", "topic" FROM "Topic" WHERE "id" = $1
+      """
+      configuration: "postgresql_config"
+    )
+  " Queries for type 'Vote' "
+  getVote(id: ID!): Vote
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Vote"
+      configuration: "postgresql_config"
+    )
+  getVoteList: [Vote]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Vote"
+      configuration: "postgresql_config"
+    )
+  getVotesByPostID(post_id: ID!): [Vote]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      select * from "Vote" where "post_id" = $1
+      order by "created_at" desc
+      """
+      configuration: "postgresql_config"
+    )
+  getVotePaginatedList(first: Int, after: Int): [Vote]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      SELECT "created_at", "id", "post_id", "upvote", "username" FROM "Vote" ORDER BY "id" LIMIT $1 OFFSET $2
+      """
+      configuration: "postgresql_config"
+    )
+  getVoteUsingVote_post_id_fkey(id: ID!): [Vote]
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      SELECT "created_at", "id", "post_id", "upvote", "username" FROM "Vote" WHERE "post_id" = $1
+      """
+      configuration: "postgresql_config"
+    )
+}
+
+"""
+The following mutations are just a set of examples of how to access your schema.
+Feel free to modify them or aggregate more.
+"""
+type Mutation {
+  " Mutations for type 'Comment' "
+  deleteComment(id: ID!): Comment
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Comment"
+      dml: DELETE
+      configuration: "postgresql_config"
+    )
+  insertComment(username: String, post_id: ID!, text: String!): Comment
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Comment"
+      dml: INSERT
+      configuration: "postgresql_config"
+    )
+  updateComment(
+    id: ID!
+    created_at: DateTime
+    post_id: ID
+    text: String
+    username: String
+  ): Comment
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      UPDATE "Comment" SET
+        "created_at" = COALESCE($2, "created_at"),
+        "post_id" = COALESCE($3, "post_id"),
+        "text" = COALESCE($4, "text"),
+        "username" = COALESCE($5, "username")
+      WHERE
+        "id" = $1
+      RETURNING *
+      """
+      configuration: "postgresql_config"
+    )
+  " Mutations for type 'Post' "
+  deletePost(id: ID!): Post
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Post"
+      dml: DELETE
+      configuration: "postgresql_config"
+    )
+  insertPost(
+    body: String
+    topic_id: ID!
+    title: String!
+    username: String!
+    image: String
+  ): Post
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Post"
+      dml: INSERT
+      configuration: "postgresql_config"
+    )
+  updatePost(
+    id: ID!
+    body: String
+    created_at: DateTime
+    image: String
+    title: String
+    topic_id: ID
+    username: String
+  ): Post
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      UPDATE "Post" SET
+        "body" = COALESCE($2, "body"),
+        "created_at" = COALESCE($3, "created_at"),
+        "image" = COALESCE($4, "image"),
+        "title" = COALESCE($5, "title"),
+        "topic_id" = COALESCE($6, "topic_id"),
+        "username" = COALESCE($7, "username")
+      WHERE
+        "id" = $1
+      RETURNING *
+      """
+      configuration: "postgresql_config"
+    )
+  " Mutations for type 'Topic' "
+  deleteTopic(id: ID!): Topic
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Topic"
+      dml: DELETE
+      configuration: "postgresql_config"
+    )
+  insertTopic(topic: String!): Topic
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Topic"
+      dml: INSERT
+      configuration: "postgresql_config"
+    )
+  updateTopic(id: ID!, created_at: DateTime, topic: String): Topic
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      UPDATE "Topic" SET
+        "created_at" = COALESCE($2, "created_at"),
+        "topic" = COALESCE($3, "topic")
+      WHERE
+        "id" = $1
+      RETURNING *
+      """
+      configuration: "postgresql_config"
+    )
+  " Mutations for type 'Vote' "
+  deleteVote(id: ID!): Vote
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Vote"
+      dml: DELETE
+      configuration: "postgresql_config"
+    )
+  insertVote(username: String, post_id: ID, upvote: Boolean): Vote
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      table: "Vote"
+      dml: INSERT
+      configuration: "postgresql_config"
+    )
+  updateVote(
+    id: ID!
+    created_at: DateTime
+    post_id: ID
+    upvote: Boolean
+    username: String
+  ): Vote
+    @dbquery(
+      type: "postgresql"
+      schema: "public"
+      query: """
+      UPDATE "Vote" SET
+        "created_at" = COALESCE($2, "created_at"),
+        "post_id" = COALESCE($3, "post_id"),
+        "upvote" = COALESCE($4, "upvote"),
+        "username" = COALESCE($5, "username")
+      WHERE
+        "id" = $1
+      RETURNING *
+      """
+      configuration: "postgresql_config"
+    )
+}
